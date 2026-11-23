@@ -1,15 +1,15 @@
-#define PLUG_NAME "RVRSE"
+#define PLUG_NAME "RVRSE Enhanced"
 #define PLUG_MFR "SamuFL"
 #define PLUG_VERSION_HEX 0x00010100
 #define PLUG_VERSION_STR "1.1.0"
-#define PLUG_UNIQUE_ID '5SpI'
+#define PLUG_UNIQUE_ID 'RvEn'
 #define PLUG_MFR_ID 'SmFL'
 #define PLUG_URL_STR "https://samufl.com"
 #define PLUG_EMAIL_STR "info@samufl.com"
 #define PLUG_COPYRIGHT_STR "Copyright 2026 SamuFL"
 #define PLUG_CLASS_NAME RVRSE
 
-#define BUNDLE_NAME "RVRSE"
+#define BUNDLE_NAME "RVRSE Enhanced"
 #define BUNDLE_MFR "SamuFL"
 #define BUNDLE_DOMAIN "com"
 
