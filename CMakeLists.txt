@@ -16,6 +16,21 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(signalsmith-stretch)
 
+# dr_mp3 is a single-header permissively licensed decoder (dr_libs / public domain or MIT-0).
+# Download during configure if the header is not already vendored.
+set(RVRSE_MP3_HEADER "${CMAKE_SOURCE_DIR}/RVRSE/libs/dr_libs/dr_mp3.h")
+if(NOT EXISTS "${RVRSE_MP3_HEADER}")
+  file(DOWNLOAD
+    "https://raw.githubusercontent.com/mackron/dr_libs/master/dr_mp3.h"
+    "${RVRSE_MP3_HEADER}"
+    STATUS _mp3_download_status
+    TLS_VERIFY ON)
+  list(GET _mp3_download_status 0 _mp3_status_code)
+  if(NOT _mp3_status_code EQUAL 0)
+    message(FATAL_ERROR "Could not fetch dr_mp3.h. Download it manually from mackron/dr_libs into RVRSE/libs/dr_libs/.")
+  endif()
+endif()
+
 add_subdirectory(RVRSE)
 
 # Unit tests (Catch2) — opt-in via BUILD_TESTING (ON by default)

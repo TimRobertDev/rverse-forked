@@ -234,12 +234,29 @@ public:
     }
   }
 
+  void SetDragOutCallback(std::function<void()> fn) { mDragOutCallback = std::move(fn); }
+
   void OnMouseDown(float x, float y, const IMouseMod& mod) override
   {
-    // No interaction — purely visual
+    mDragStartX = x;
+    mDragStartY = y;
+    mDragStarted = false;
   }
+  void OnMouseDrag(float x, float y, float, float, const IMouseMod&) override
+  {
+    if (!mDragStarted && mDragOutCallback && mRiserFrames > 0 &&
+        (std::abs(x - mDragStartX) > 6.f || std::abs(y - mDragStartY) > 6.f))
+    {
+      mDragStarted = true;
+      mDragOutCallback();
+    }
+  }
+  void OnMouseUp(float, float, const IMouseMod&) override { mDragStarted = false; }
 
 private:
+  std::function<void()> mDragOutCallback;
+  float mDragStartX = 0.f, mDragStartY = 0.f;
+  bool mDragStarted = false;
   /// Downsample audio buffer into peak bins for the current control width.
   void Downsample(const float* data, int numFrames, WaveformPeaks& peaks)
   {

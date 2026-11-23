@@ -4,7 +4,7 @@
 /// @brief Stateless functions for loading audio files into SampleData.
 ///        OFFLINE ONLY — never call from the audio thread.
 ///
-/// Supports WAV and AIFF via dr_wav (header-only from dr_libs).
+/// Supports WAV and AIFF via dr_wav, MP3 via dr_mp3 (header-only from dr_libs).
 /// All functions allocate memory and are therefore forbidden on the audio thread.
 
 #include "SampleData.h"
@@ -21,7 +21,7 @@ struct SampleLoadResult
 };
 
 /// Load an audio file from disk into a SampleData struct.
-/// Supports uncompressed WAV (.wav) and AIFF (.aif, .aiff) formats.
+/// Supports uncompressed WAV (.wav), AIFF (.aif, .aiff) and MP3 (.mp3) formats.
 ///
 /// @param filePath  Absolute path to the audio file.
 /// @return SampleLoadResult with success/failure and loaded data.
@@ -38,7 +38,7 @@ std::string ExtractFileName(const std::string& filePath);
 
 /// Check if a file extension is a supported audio format.
 /// @param filePath  Path or filename to check
-/// @return true if the extension is .wav, .aif, or .aiff (case-insensitive)
+/// @return true if the extension is .wav, .aif, .aiff or .mp3 (case-insensitive)
 bool IsSupportedAudioFile(const std::string& filePath);
 
 /// Returns a user-facing load error for unsupported/compressed formats.

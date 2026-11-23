@@ -8,6 +8,9 @@
 #include "TransitionTiming.h"
 #include "WaveformControl.h"
 #include "dr_wav.h"
+#ifdef _WIN32
+#include "WindowsFileDrag.h"
+#endif
 
 #include <algorithm>
 #include <array>
@@ -712,6 +715,7 @@ RVRSE::RVRSE(const InstanceInfo& info)
     // Wire drag-and-drop into the waveform display — most intuitive drop target.
     if (auto* pWave = static_cast<rvrse::WaveformControl*>(pGraphics->GetControlWithTag(kCtrlTagWaveformDisplay)))
     {
+      pWave->SetDragOutCallback([this]() { StartDragExportFromUI(); });
       pWave->SetDropCallback([this](const char* str) {
         if (!str || str[0] == '\0') return;
         if (!rvrse::IsSupportedAudioFile(str))
@@ -1236,6 +1240,67 @@ void RVRSE::QueueExportStatus(const char* statusText, int visibleFrames)
 void RVRSE::QueueExportError(const char* errorMessage)
 {
   ::QueueExportError(mExportUiState, errorMessage);
+}
+
+void RVRSE::StartDragExportFromUI()
+{
+#if defined(_WIN32) && IPLUG_EDITOR
+  if (!HasReadyPreviewExportData() || HasPendingRender() ||
+      (mExportUiState && mExportUiState->mInProgress.load(std::memory_order_acquire)))
+    return;
+
+  const auto hit = std::atomic_load(&mPlaySample);
+  const auto riser = std::atomic_load(&mRiserBuffer);
+  const auto trim = GetCommittedTrimRangeForSample(hit);
+  if (!hit || !riser || !trim.IsValid()) return;
+  auto trimmed = BuildTrimmedSampleCopy(hit, trim);
+  rvrse::ExportRenderConfig config;
+  config.mFadeInPct = static_cast<float>(GetParam(kParamFadeIn)->Value() / 100.0);
+  config.mRiserGain = std::pow(10.0f, static_cast<float>(GetParam(kParamRiserVolume)->Value()) / 20.0f);
+  config.mHitGain = std::pow(10.0f, static_cast<float>(GetParam(kParamHitVolume)->Value()) / 20.0f);
+  config.mVelocityGain = 1.0f;
+  rvrse::ExportRenderData audio;
+  // Synchronous on first drag: Windows OLE requires the file to exist before DoDragDrop.
+  if (!rvrse::RenderNormalExport(*riser, *trimmed, config, audio))
+  {
+    QueueExportError("Could not render drag export");
+    return;
+  }
+  std::vector<uint8_t> pcm;
+  PackFloatTo24BitPcm(audio.mInterleaved, pcm);
+  std::error_code ec;
+  const auto folder = std::filesystem::temp_directory_path(ec) / "RVRSE-Drag";
+  if (ec || !std::filesystem::create_directories(folder, ec) && ec)
+  {
+    QueueExportError("Could not create temporary drag directory");
+    return;
+  }
+  const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+  const auto path = folder / (std::to_string(stamp) + "_rvrse.wav");
+  drwav_data_format format {};
+  format.container = drwav_container_riff;
+  format.format = DR_WAVE_FORMAT_PCM;
+  format.channels = 2;
+  format.sampleRate = audio.mSampleRate;
+  format.bitsPerSample = 24;
+  drwav wav {};
+  if (!drwav_init_file_write_sequential_pcm_frames_w(&wav, path.wstring().c_str(), &format, audio.mNumFrames, nullptr))
+  {
+    QueueExportError("Could not create temporary WAV");
+    return;
+  }
+  const auto written = drwav_write_raw(&wav, pcm.size(), pcm.data());
+  const auto closeResult = drwav_uninit(&wav);
+  if (written != pcm.size() || closeResult != DRWAV_SUCCESS)
+  {
+    std::filesystem::remove(path, ec);
+    QueueExportError("Could not write temporary WAV");
+    return;
+  }
+  // Deliberately retain the WAV: Ableton may read it after the drop completes.
+  if (rvrse::DragFileToHost(path.wstring()))
+    QueueExportStatus("Dragged to host", kExportStatusVisibleFrames);
+#endif
 }
 
 void RVRSE::StartExportFromUI()

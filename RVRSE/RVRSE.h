@@ -159,6 +159,7 @@ private:
   /// or from UnserializeState (host-managed restore path).
   void LoadSampleFromFile(const char* filePath, bool preserveTrim = false);
   void StartExportFromUI();
+  void StartDragExportFromUI();
   bool HasReadyPreviewExportData() const;
   void QueueExportStatus(const char* statusText, int visibleFrames = -1);
   void QueueExportError(const char* errorMessage);

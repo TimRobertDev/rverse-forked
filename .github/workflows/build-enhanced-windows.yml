@@ -1,0 +1,26 @@
+name: Build RVRSE Enhanced Windows
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-2022
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Download iPlug2 SDK
+        shell: bash
+        working-directory: iPlug2/Dependencies/IPlug
+        run: ./download-vst3-sdk.sh
+      - name: Configure Release
+        run: cmake --preset windows-vs2022
+      - name: Build Release
+        run: cmake --build build/windows-vs2022 --config Release --target RVRSE-vst3
+      - name: Upload VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: RVRSE-Enhanced-Windows-VST3
+          path: build/windows-vs2022/out/RVRSE.vst3/**
+          if-no-files-found: error

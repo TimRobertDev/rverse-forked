@@ -80,7 +80,9 @@ TEST_CASE("IsSupportedAudioFile: property - all supported extensions return true
     std::string(".aif"),
     std::string(".AIF"),
     std::string(".aiff"),
-    std::string(".AIFF")
+    std::string(".AIFF"),
+    std::string(".mp3"),
+    std::string(".MP3")
   );
 
   auto prefix = GENERATE(
@@ -107,7 +109,6 @@ TEST_CASE("IsSupportedAudioFile: property - unsupported extensions return false"
   // Feature: drag-and-drop, Property 2: unsupported format preserves sample state
 
   auto ext = GENERATE(
-    std::string(".mp3"),
     std::string(".flac"),
     std::string(".ogg"),
     std::string(".aac"),

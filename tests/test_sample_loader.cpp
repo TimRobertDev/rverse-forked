@@ -286,7 +286,7 @@ TEST_CASE("SampleLoader: unsupported extension returns error", "[sampleloader]")
   auto path = std::filesystem::temp_directory_path() / "rvrse_test.mp3";
   auto result = LoadSample(path.string());
   REQUIRE_FALSE(result.success);
-  REQUIRE(result.errorMessage == "RVRSE supports uncompressed WAV and AIFF only.");
+  REQUIRE(result.errorMessage.find("MP3") != std::string::npos);
 }
 
 // ---------------------------------------------------------------------------
@@ -303,7 +303,7 @@ TEST_CASE("SampleLoader: IsSupportedAudioFile", "[sampleloader]")
   REQUIRE(IsSupportedAudioFile("sample.AIFF"));
 
   // Not supported
-  REQUIRE_FALSE(IsSupportedAudioFile("sample.mp3"));
+  REQUIRE(IsSupportedAudioFile("sample.mp3"));
   REQUIRE_FALSE(IsSupportedAudioFile("sample.flac"));
   REQUIRE_FALSE(IsSupportedAudioFile("sample.ogg"));
   REQUIRE_FALSE(IsSupportedAudioFile("sample.txt"));
@@ -325,7 +325,7 @@ TEST_CASE("SampleLoader: ExtractFileName", "[sampleloader]")
 
 TEST_CASE("SampleLoader: GetAudioFileLoadError returns generic message for unsupported extension", "[sampleloader]")
 {
-  REQUIRE(GetAudioFileLoadError("sample.mp3") == "RVRSE supports uncompressed WAV and AIFF only.");
+  REQUIRE(GetAudioFileLoadError("sample.mp3").empty());
 }
 
 TEST_CASE("SampleLoader: compressed WAV returns explicit error", "[sampleloader]")
